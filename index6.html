@@ -337,21 +337,44 @@ const weddingDate = new Date("2026-08-26T17:40:00+03:00");
 function updateCountdown(){const now=new Date();const diff=weddingDate-now;if(diff<=0){["days","hours","minutes","seconds"].forEach(id=>document.getElementById(id).textContent="0");return}document.getElementById("days").textContent=Math.floor(diff/(1000*60*60*24));document.getElementById("hours").textContent=Math.floor((diff/(1000*60*60))%24);document.getElementById("minutes").textContent=Math.floor((diff/(1000*60))%60);document.getElementById("seconds").textContent=Math.floor((diff/1000)%60)}
 updateCountdown();setInterval(updateCountdown,1000);
 
-// ===== ОБЩИЙ СПИСОК ГОСТЕЙ (shared storage) =====
-const STORAGE_KEY = "weddingGuests_artem_yulia";
+// ===================================================
+// 🔧 НАСТРОЙКИ — вставьте ваши данные с jsonbin.io
+// ===================================================
+const JSONBIN_API_KEY = "ВАШ_API_KEY";   // X-Master-Key
+const JSONBIN_BIN_ID  = "ВАШ_BIN_ID";   // ID корзины
+// ===================================================
+
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+const JSONBIN_HEADERS = {
+  "Content-Type": "application/json",
+  "X-Master-Key": JSONBIN_API_KEY
+};
+
 const categories = ["друзья невесты","друзья жениха","родственники невесты","родственники жениха"];
 const statuses = ["придёт","не придёт","под вопросом"];
 let guests = [];
 
 function escapeHtml(text){return String(text||"").replaceAll("&","&amp;").replaceAll('"',"&quot;").replaceAll("<","&lt;").replaceAll(">","&gt;")}
 
+function showConfigError() {
+  const table = document.getElementById("guestTable");
+  table.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#c0392b;padding:24px">
+    ⚙️ Нужно настроить базу данных — вставьте API_KEY и BIN_ID в код сайта.<br>
+    <small style="color:#9d6b62">Инструкция: jsonbin.io → Register → Create Bin</small>
+  </td></tr>`;
+}
+
 async function loadGuests() {
+  if (JSONBIN_API_KEY === "ВАШ_API_KEY") { showConfigError(); return; }
   const loader = document.getElementById("loadingIndicator");
   if (loader) loader.style.display = "block";
   try {
-    const result = await window.storage.get(STORAGE_KEY, true);
-    guests = result ? JSON.parse(result.value) : [];
+    const res = await fetch(JSONBIN_URL + "/latest", { headers: JSONBIN_HEADERS });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    guests = Array.isArray(data.record) ? data.record : [];
   } catch(e) {
+    console.error("Ошибка загрузки:", e);
     guests = [];
   }
   if (loader) loader.style.display = "none";
@@ -359,8 +382,13 @@ async function loadGuests() {
 }
 
 async function saveGuests() {
+  if (JSONBIN_API_KEY === "ВАШ_API_KEY") return;
   try {
-    await window.storage.set(STORAGE_KEY, JSON.stringify(guests), true);
+    await fetch(JSONBIN_URL, {
+      method: "PUT",
+      headers: JSONBIN_HEADERS,
+      body: JSON.stringify(guests)
+    });
   } catch(e) {
     console.error("Ошибка сохранения:", e);
   }
@@ -418,6 +446,15 @@ async function submitRsvp() {
     msg.textContent = "Пожалуйста, введите ваше имя ✏️";
     return;
   }
+  if (JSONBIN_API_KEY === "ВАШ_API_KEY") {
+    msg.style.color = "#c0392b";
+    msg.textContent = "⚙️ База данных не настроена. Вставьте API_KEY и BIN_ID.";
+    return;
+  }
+  const btn = document.querySelector('[onclick="submitRsvp()"]');
+  if (btn) { btn.disabled = true; btn.textContent = "Сохраняем..."; }
+  msg.style.color = "var(--rose-dark)";
+  msg.textContent = "";
   const newGuest = {
     category: document.getElementById("rsvpCategory").value,
     name: name,
@@ -425,22 +462,23 @@ async function submitRsvp() {
     status: document.getElementById("rsvpStatus").value,
     comment: document.getElementById("rsvpComment").value.trim()
   };
-  // Reload before save to avoid overwriting concurrent changes
+  // Свежая загрузка перед сохранением, чтобы не затереть чужие записи
   try {
-    const result = await window.storage.get(STORAGE_KEY, true);
-    guests = result ? JSON.parse(result.value) : [];
-  } catch(e) { guests = []; }
+    const res = await fetch(JSONBIN_URL + "/latest", { headers: JSONBIN_HEADERS });
+    const data = await res.json();
+    guests = Array.isArray(data.record) ? data.record : [];
+  } catch(e) { /* используем текущий список */ }
   guests.push(newGuest);
   await saveGuests();
   renderGuests();
-  // Reset form
   document.getElementById("rsvpName").value = "";
   document.getElementById("rsvpComment").value = "";
   document.getElementById("rsvpCount").value = "1";
   document.getElementById("rsvpStatus").value = "придёт";
+  if (btn) { btn.disabled = false; btn.textContent = "Подтвердить присутствие ♡"; }
   msg.style.color = "var(--rose-dark)";
   msg.textContent = `Спасибо, ${name}! Ваш ответ сохранён 🌸`;
-  setTimeout(()=>{ msg.textContent = ""; }, 4000);
+  setTimeout(()=>{ msg.textContent = ""; }, 5000);
 }
 
 // Загружаем список при старте и обновляем каждые 15 сек
