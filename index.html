@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -205,6 +206,16 @@ footer{padding:44px 20px;text-align:center;background:#f5e3dd;color:var(--rose-d
   .map-section{background-attachment: scroll;}
 }
 
+
+/* === Мобильная галерея компактнее === */
+@media(max-width:760px){
+  .gallery{grid-template-columns:1fr;gap:12px}
+  .gallery-card{min-height:auto;height:240px;border-radius:20px}
+  .gallery-card img{height:100%;object-fit:cover}
+  .section-subtitle{font-size:16px;margin-bottom:26px}
+}
+@media(max-width:430px){.gallery-card{height:210px}}
+
 </style>
 </head>
 
@@ -286,6 +297,14 @@ footer{padding:44px 20px;text-align:center;background:#f5e3dd;color:var(--rose-d
 <footer>С любовью, Артём и Юля</footer>
 
 <script>
+
+/* === Общая база гостей ===
+Вставьте ссылку Google Apps Script Web App вместо PASTE_YOUR_WEB_APP_URL_HERE
+*/
+const WEB_APP_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
+const USE_SHARED_GUESTS = !WEB_APP_URL.includes("PASTE_YOUR_WEB_APP_URL_HERE");
+let syncTimer = null;
+
 const weddingDate = new Date("2026-08-26T17:40:00+03:00");
 function updateCountdown(){const now=new Date();const diff=weddingDate-now;if(diff<=0){["days","hours","minutes","seconds"].forEach(id=>document.getElementById(id).textContent="0");return}document.getElementById("days").textContent=Math.floor(diff/(1000*60*60*24));document.getElementById("hours").textContent=Math.floor((diff/(1000*60*60))%24);document.getElementById("minutes").textContent=Math.floor((diff/(1000*60))%60);document.getElementById("seconds").textContent=Math.floor((diff/1000)%60)}
 updateCountdown();setInterval(updateCountdown,1000);
@@ -293,7 +312,42 @@ updateCountdown();setInterval(updateCountdown,1000);
 const categories=["друзья невесты","друзья жениха","родственники невесты","родственники жениха"];
 const statuses=["придёт","не придёт","под вопросом"];
 let guests=JSON.parse(localStorage.getItem("weddingGuests"))||[{category:"друзья невесты",name:"",count:1,status:"под вопросом",comment:""}];
-function saveGuests(){localStorage.setItem("weddingGuests",JSON.stringify(guests))}
+function saveGuests(){
+  localStorage.setItem("weddingGuests", JSON.stringify(guests));
+  scheduleSharedSync();
+}
+
+function scheduleSharedSync(){
+  if(!USE_SHARED_GUESTS) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncGuestsToServer, 500);
+}
+
+async function syncGuestsToServer(){
+  if(!USE_SHARED_GUESTS) return;
+  try{
+    await fetch(WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({action:"replaceAll", guests})
+    });
+  }catch(e){console.warn("Синхронизация гостей не удалась", e);}
+}
+
+async function loadGuestsFromServer(){
+  if(!USE_SHARED_GUESTS) return;
+  try{
+    const res = await fetch(WEB_APP_URL + "?action=list&t=" + Date.now());
+    const data = await res.json();
+    if(Array.isArray(data.guests)){
+      guests = data.guests.length ? data.guests : guests;
+      localStorage.setItem("weddingGuests", JSON.stringify(guests));
+      renderGuests();
+loadGuestsFromServer();
+    }
+  }catch(e){console.warn("Загрузка общего списка не удалась", e);}
+}
 function renderGuests(){const table=document.getElementById("guestTable");table.innerHTML="";guests.forEach((guest,index)=>{const row=document.createElement("tr");row.innerHTML=`<td><select onchange="updateGuest(${index}, 'category', this.value)">${categories.map(cat=>`<option value="${cat}" ${guest.category===cat?"selected":""}>${cat}</option>`).join("")}</select></td><td><input type="text" value="${escapeHtml(guest.name)}" onchange="updateGuest(${index}, 'name', this.value)" placeholder="Имя гостя"></td><td><input type="number" min="1" value="${guest.count}" onchange="updateGuest(${index}, 'count', this.value)"></td><td><select onchange="updateGuest(${index}, 'status', this.value)">${statuses.map(status=>`<option value="${status}" ${guest.status===status?"selected":""}>${status}</option>`).join("")}</select></td><td><input type="text" value="${escapeHtml(guest.comment)}" onchange="updateGuest(${index}, 'comment', this.value)" placeholder="Комментарий"></td><td><button class="delete-btn" onclick="deleteGuest(${index})">Удалить</button></td>`;table.appendChild(row)});updateStats()}
 function addGuest(){guests.push({category:"друзья невесты",name:"",count:1,status:"под вопросом",comment:""});saveGuests();renderGuests()}
 function deleteGuest(index){guests.splice(index,1);saveGuests();renderGuests()}
@@ -319,7 +373,8 @@ if (mapWrap) {
 // Реалистичные лепестки роз
 const petalsLayer = document.getElementById("petalsLayer");
 if (petalsLayer) {
-  const petalsCount = 36;
+  const isMobile = window.matchMedia("(max-width: 760px)").matches;
+  const petalsCount = isMobile ? 12 : 36;
 
   for (let i = 0; i < petalsCount; i++) {
     const petal = document.createElement("span");
@@ -372,7 +427,8 @@ if (finalMapWrap) {
 
 const finalPetalsLayer = document.getElementById("petalsLayer");
 if (finalPetalsLayer && finalPetalsLayer.children.length === 0) {
-  const petalsCount = 34;
+  const isMobileFinal = window.matchMedia("(max-width: 760px)").matches;
+  const petalsCount = isMobileFinal ? 12 : 34;
   for (let i = 0; i < petalsCount; i++) {
     const petal = document.createElement("span");
     petal.className = "petal";
