@@ -276,59 +276,13 @@ footer{padding:44px 20px;text-align:center;background:#f5e3dd;color:var(--rose-d
 </div></div></section>
 
 <section id="rsvp" class="section-decor"><div class="container">
-<h2 class="section-title">Подтвердить присутствие</h2>
-<p class="section-subtitle">Заполните форму ниже — и мы будем знать, что вы придёте 🌸</p>
-
-<!-- Форма быстрого RSVP -->
-<div class="guest-panel" style="margin-bottom:28px;max-width:680px;margin-left:auto;margin-right:auto">
-  <h3 style="color:var(--rose-dark);font-size:20px;margin-bottom:18px;text-align:center;font-weight:400">Ваше присутствие</h3>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-    <div>
-      <label style="font-size:13px;color:#7d665d;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Ваше имя *</label>
-      <input id="rsvpName" type="text" placeholder="Имя и фамилия" style="width:100%">
-    </div>
-    <div>
-      <label style="font-size:13px;color:#7d665d;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Категория</label>
-      <select id="rsvpCategory" style="width:100%">
-        <option value="друзья невесты">Друзья невесты</option>
-        <option value="друзья жениха">Друзья жениха</option>
-        <option value="родственники невесты">Родственники невесты</option>
-        <option value="родственники жениха">Родственники жениха</option>
-      </select>
-    </div>
-    <div>
-      <label style="font-size:13px;color:#7d665d;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Количество человек</label>
-      <input id="rsvpCount" type="number" min="1" value="1" style="width:100%">
-    </div>
-    <div>
-      <label style="font-size:13px;color:#7d665d;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Присутствие</label>
-      <select id="rsvpStatus" style="width:100%">
-        <option value="придёт">Приду ✓</option>
-        <option value="не придёт">Не смогу</option>
-        <option value="под вопросом">Под вопросом</option>
-      </select>
-    </div>
-  </div>
-  <div style="margin-bottom:16px">
-    <label style="font-size:13px;color:#7d665d;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Комментарий</label>
-    <input id="rsvpComment" type="text" placeholder="Пожелания, аллергии, вопросы..." style="width:100%">
-  </div>
-  <div style="text-align:center">
-    <button onclick="submitRsvp()" style="padding:13px 36px;font-size:16px">Подтвердить присутствие ♡</button>
-  </div>
-  <div id="rsvpMessage" style="text-align:center;margin-top:14px;font-size:15px;color:var(--rose-dark);min-height:22px"></div>
-</div>
-
-<!-- Список всех гостей -->
+<h2 class="section-title">Список гостей</h2>
+<p class="section-subtitle">Можно добавлять гостей, менять категорию, количество человек и отмечать присутствие.</p>
 <div class="guest-panel">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-    <h3 style="color:var(--rose-dark);font-size:20px;font-weight:400">Список гостей</h3>
-    <div id="loadingIndicator" style="font-size:14px;color:#9d6b62;display:none">Загрузка... ⏳</div>
-  </div>
-  <div class="stats"><div class="stat">Всего гостей: <span id="totalGuests">0</span></div><div class="stat">Подтвердили: <span id="confirmedGuests">0</span></div></div>
-  <table><thead><tr><th>Категория</th><th>Имя</th><th>Кол-во</th><th>Присутствие</th><th>Комментарий</th><th></th></tr></thead><tbody id="guestTable"></tbody></table>
-</div>
-</div></section>
+<div class="stats"><div class="stat">Всего гостей: <span id="totalGuests">0</span></div><div class="stat">Подтвердили: <span id="confirmedGuests">0</span></div></div>
+<table><thead><tr><th>Категория</th><th>Имя</th><th>Кол-во</th><th>Присутствие</th><th>Комментарий</th><th></th></tr></thead><tbody id="guestTable"></tbody></table>
+<button class="add-btn" onclick="addGuest()">Добавить гостя</button>
+</div></div></section>
 
 <footer>С любовью, Артём и Юля</footer>
 
@@ -337,153 +291,17 @@ const weddingDate = new Date("2026-08-26T17:40:00+03:00");
 function updateCountdown(){const now=new Date();const diff=weddingDate-now;if(diff<=0){["days","hours","minutes","seconds"].forEach(id=>document.getElementById(id).textContent="0");return}document.getElementById("days").textContent=Math.floor(diff/(1000*60*60*24));document.getElementById("hours").textContent=Math.floor((diff/(1000*60*60))%24);document.getElementById("minutes").textContent=Math.floor((diff/(1000*60))%60);document.getElementById("seconds").textContent=Math.floor((diff/1000)%60)}
 updateCountdown();setInterval(updateCountdown,1000);
 
-// ===================================================
-// 🔧 НАСТРОЙКИ — вставьте ваши данные с jsonbin.io
-// ===================================================
-const JSONBIN_API_KEY = "ВАШ_API_KEY";   // X-Master-Key
-const JSONBIN_BIN_ID  = "ВАШ_BIN_ID";   // ID корзины
-// ===================================================
-
-const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
-const JSONBIN_HEADERS = {
-  "Content-Type": "application/json",
-  "X-Master-Key": JSONBIN_API_KEY
-};
-
-const categories = ["друзья невесты","друзья жениха","родственники невесты","родственники жениха"];
-const statuses = ["придёт","не придёт","под вопросом"];
-let guests = [];
-
+const categories=["друзья невесты","друзья жениха","родственники невесты","родственники жениха"];
+const statuses=["придёт","не придёт","под вопросом"];
+let guests=JSON.parse(localStorage.getItem("weddingGuests"))||[{category:"друзья невесты",name:"",count:1,status:"под вопросом",comment:""}];
+function saveGuests(){localStorage.setItem("weddingGuests",JSON.stringify(guests))}
+function renderGuests(){const table=document.getElementById("guestTable");table.innerHTML="";guests.forEach((guest,index)=>{const row=document.createElement("tr");row.innerHTML=`<td><select onchange="updateGuest(${index}, 'category', this.value)">${categories.map(cat=>`<option value="${cat}" ${guest.category===cat?"selected":""}>${cat}</option>`).join("")}</select></td><td><input type="text" value="${escapeHtml(guest.name)}" onchange="updateGuest(${index}, 'name', this.value)" placeholder="Имя гостя"></td><td><input type="number" min="1" value="${guest.count}" onchange="updateGuest(${index}, 'count', this.value)"></td><td><select onchange="updateGuest(${index}, 'status', this.value)">${statuses.map(status=>`<option value="${status}" ${guest.status===status?"selected":""}>${status}</option>`).join("")}</select></td><td><input type="text" value="${escapeHtml(guest.comment)}" onchange="updateGuest(${index}, 'comment', this.value)" placeholder="Комментарий"></td><td><button class="delete-btn" onclick="deleteGuest(${index})">Удалить</button></td>`;table.appendChild(row)});updateStats()}
+function addGuest(){guests.push({category:"друзья невесты",name:"",count:1,status:"под вопросом",comment:""});saveGuests();renderGuests()}
+function deleteGuest(index){guests.splice(index,1);saveGuests();renderGuests()}
+function updateGuest(index,field,value){guests[index][field]=field==="count"?Number(value):value;saveGuests();updateStats()}
+function updateStats(){const total=guests.reduce((sum,g)=>sum+Number(g.count||0),0);const confirmed=guests.filter(g=>g.status==="придёт").reduce((sum,g)=>sum+Number(g.count||0),0);document.getElementById("totalGuests").textContent=total;document.getElementById("confirmedGuests").textContent=confirmed}
 function escapeHtml(text){return String(text||"").replaceAll("&","&amp;").replaceAll('"',"&quot;").replaceAll("<","&lt;").replaceAll(">","&gt;")}
-
-function showConfigError() {
-  const table = document.getElementById("guestTable");
-  table.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#c0392b;padding:24px">
-    ⚙️ Нужно настроить базу данных — вставьте API_KEY и BIN_ID в код сайта.<br>
-    <small style="color:#9d6b62">Инструкция: jsonbin.io → Register → Create Bin</small>
-  </td></tr>`;
-}
-
-async function loadGuests() {
-  if (JSONBIN_API_KEY === "ВАШ_API_KEY") { showConfigError(); return; }
-  const loader = document.getElementById("loadingIndicator");
-  if (loader) loader.style.display = "block";
-  try {
-    const res = await fetch(JSONBIN_URL + "/latest", { headers: JSONBIN_HEADERS });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
-    guests = Array.isArray(data.record) ? data.record : [];
-  } catch(e) {
-    console.error("Ошибка загрузки:", e);
-    guests = [];
-  }
-  if (loader) loader.style.display = "none";
-  renderGuests();
-}
-
-async function saveGuests() {
-  if (JSONBIN_API_KEY === "ВАШ_API_KEY") return;
-  try {
-    await fetch(JSONBIN_URL, {
-      method: "PUT",
-      headers: JSONBIN_HEADERS,
-      body: JSON.stringify(guests)
-    });
-  } catch(e) {
-    console.error("Ошибка сохранения:", e);
-  }
-}
-
-function renderGuests() {
-  const table = document.getElementById("guestTable");
-  table.innerHTML = "";
-  if (guests.length === 0) {
-    table.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9d6b62;padding:24px;font-style:italic">Пока никто не добавлен. Будьте первым! ♡</td></tr>';
-    updateStats();
-    return;
-  }
-  guests.forEach((guest, index) => {
-    const row = document.createElement("tr");
-    const statusColors = {"придёт":"#d4edda","не придёт":"#f8d7da","под вопросом":"#fff3cd"};
-    row.innerHTML = `
-      <td><select onchange="updateGuest(${index},'category',this.value)">${categories.map(c=>`<option value="${c}" ${guest.category===c?"selected":""}>${c}</option>`).join("")}</select></td>
-      <td><input type="text" value="${escapeHtml(guest.name)}" onchange="updateGuest(${index},'name',this.value)" placeholder="Имя гостя"></td>
-      <td><input type="number" min="1" value="${guest.count}" onchange="updateGuest(${index},'count',this.value)" style="max-width:70px"></td>
-      <td><select onchange="updateGuest(${index},'status',this.value)" style="background:${statusColors[guest.status]||'#fffaf7'}">${statuses.map(s=>`<option value="${s}" ${guest.status===s?"selected":""}>${s}</option>`).join("")}</select></td>
-      <td><input type="text" value="${escapeHtml(guest.comment)}" onchange="updateGuest(${index},'comment',this.value)" placeholder="Комментарий"></td>
-      <td><button class="delete-btn" onclick="deleteGuest(${index})">✕</button></td>`;
-    table.appendChild(row);
-  });
-  updateStats();
-}
-
-async function deleteGuest(index) {
-  if (!confirm("Удалить этого гостя?")) return;
-  guests.splice(index, 1);
-  await saveGuests();
-  renderGuests();
-}
-
-async function updateGuest(index, field, value) {
-  guests[index][field] = field === "count" ? Number(value) : value;
-  await saveGuests();
-  updateStats();
-}
-
-function updateStats() {
-  const total = guests.reduce((s,g)=>s+Number(g.count||0),0);
-  const confirmed = guests.filter(g=>g.status==="придёт").reduce((s,g)=>s+Number(g.count||0),0);
-  document.getElementById("totalGuests").textContent = total;
-  document.getElementById("confirmedGuests").textContent = confirmed;
-}
-
-// Форма быстрого RSVP
-async function submitRsvp() {
-  const name = document.getElementById("rsvpName").value.trim();
-  const msg = document.getElementById("rsvpMessage");
-  if (!name) {
-    msg.style.color = "#c0392b";
-    msg.textContent = "Пожалуйста, введите ваше имя ✏️";
-    return;
-  }
-  if (JSONBIN_API_KEY === "ВАШ_API_KEY") {
-    msg.style.color = "#c0392b";
-    msg.textContent = "⚙️ База данных не настроена. Вставьте API_KEY и BIN_ID.";
-    return;
-  }
-  const btn = document.querySelector('[onclick="submitRsvp()"]');
-  if (btn) { btn.disabled = true; btn.textContent = "Сохраняем..."; }
-  msg.style.color = "var(--rose-dark)";
-  msg.textContent = "";
-  const newGuest = {
-    category: document.getElementById("rsvpCategory").value,
-    name: name,
-    count: Number(document.getElementById("rsvpCount").value) || 1,
-    status: document.getElementById("rsvpStatus").value,
-    comment: document.getElementById("rsvpComment").value.trim()
-  };
-  // Свежая загрузка перед сохранением, чтобы не затереть чужие записи
-  try {
-    const res = await fetch(JSONBIN_URL + "/latest", { headers: JSONBIN_HEADERS });
-    const data = await res.json();
-    guests = Array.isArray(data.record) ? data.record : [];
-  } catch(e) { /* используем текущий список */ }
-  guests.push(newGuest);
-  await saveGuests();
-  renderGuests();
-  document.getElementById("rsvpName").value = "";
-  document.getElementById("rsvpComment").value = "";
-  document.getElementById("rsvpCount").value = "1";
-  document.getElementById("rsvpStatus").value = "придёт";
-  if (btn) { btn.disabled = false; btn.textContent = "Подтвердить присутствие ♡"; }
-  msg.style.color = "var(--rose-dark)";
-  msg.textContent = `Спасибо, ${name}! Ваш ответ сохранён 🌸`;
-  setTimeout(()=>{ msg.textContent = ""; }, 5000);
-}
-
-// Загружаем список при старте и обновляем каждые 15 сек
-loadGuests();
-setInterval(loadGuests, 15000);
+renderGuests();
 
 // Анимация появления карты при скролле
 const mapWrap = document.querySelector(".map-wrap");
